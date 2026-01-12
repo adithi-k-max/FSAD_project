@@ -20,7 +20,7 @@ export default function AuthPage() {
     password: "",
     email: "",
     name: "",
-    role: "student" as const,
+    role: "student" as "student" | "employer",
     // Optional fields
     department: "",
     cgpa: "",

@@ -25,12 +25,15 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div>
-        <h1 className="text-3xl font-display font-bold text-slate-800">
-          Hello, {user.name} 👋
+      {/* Header Section */}
+      <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white rounded-2xl p-8 shadow-lg">
+        <h1 className="text-4xl font-display font-bold mb-2">
+          Welcome, {user.name}! 👋
         </h1>
-        <p className="text-muted-foreground mt-2">
-          Here's what's happening on campus today.
+        <p className="text-indigo-100 text-lg">
+          {user.role === 'student' ? 'Explore opportunities and advance your career' :
+           user.role === 'employer' ? 'Find and manage talented candidates' :
+           'Monitor placements and system statistics'}
         </p>
       </div>
 

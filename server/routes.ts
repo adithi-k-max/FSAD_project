@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
@@ -7,6 +7,12 @@ import session from "express-session";
 import MemoryStore from "memorystore";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
+
+declare module "express-session" {
+  interface SessionData {
+    userId?: number;
+  }
+}
 
 const scryptAsync = promisify(scrypt);
 
@@ -77,6 +83,7 @@ export async function registerRoutes(
       req.session.userId = user.id;
       res.status(201).json(user);
     } catch (err) {
+      console.error("Registration error:", err);
       if (err instanceof z.ZodError) {
         return res.status(400).json({ message: err.errors[0].message });
       }
@@ -120,7 +127,12 @@ export async function registerRoutes(
   });
 
   app.post(api.jobs.create.path, requireAuth, async (req, res) => {
-    const user = await storage.getUser(req.session.userId);
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+    
+    const user = await storage.getUser(userId);
     if (user?.role !== "employer") {
       return res.status(403).json({ message: "Only employers can post jobs" });
     }
@@ -141,7 +153,12 @@ export async function registerRoutes(
 
   // Applications Routes
   app.get(api.applications.list.path, requireAuth, async (req, res) => {
-    const user = await storage.getUser(req.session.userId);
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    const user = await storage.getUser(userId);
     if (!user) return res.status(401).json({ message: "Unauthorized" });
 
     if (user.role === "student") {
@@ -163,7 +180,12 @@ export async function registerRoutes(
   });
 
   app.post(api.applications.create.path, requireAuth, async (req, res) => {
-    const user = await storage.getUser(req.session.userId);
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+    
+    const user = await storage.getUser(userId);
     if (user?.role !== "student") {
       return res.status(403).json({ message: "Only students can apply" });
     }
@@ -171,21 +193,25 @@ export async function registerRoutes(
     const input = api.applications.create.input.parse(req.body);
     // Check if already applied
     const existingApps = await storage.getApplicationsByStudent(user.id);
-    const alreadyApplied = existingApps.find(a => a.jobId === input.jobId);
+    const alreadyApplied = existingApps.find(a => a.job.id === input.jobId);
     if (alreadyApplied) {
         return res.status(400).json({ message: "Already applied to this job" });
     }
 
-    const app = await storage.createApplication({
+    const application = await storage.createApplication({
       jobId: input.jobId,
       studentId: user.id,
-      status: "applied",
     });
-    res.status(201).json(app);
+    res.status(201).json(application);
   });
 
   app.patch(api.applications.updateStatus.path, requireAuth, async (req, res) => {
-    const user = await storage.getUser(req.session.userId);
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+    
+    const user = await storage.getUser(userId);
     if (!["employer", "admin", "officer"].includes(user?.role || "")) {
       return res.status(403).json({ message: "Unauthorized" });
     }
@@ -197,7 +223,12 @@ export async function registerRoutes(
 
   // Stats
   app.get(api.stats.get.path, requireAuth, async (req, res) => {
-    const user = await storage.getUser(req.session.userId);
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+    
+    const user = await storage.getUser(userId);
     if (!["admin", "officer"].includes(user?.role || "")) {
       return res.status(403).json({ message: "Unauthorized" });
     }
@@ -209,7 +240,7 @@ export async function registerRoutes(
   const seedDatabase = async () => {
     const admin = await storage.getUserByUsername("admin");
     if (!admin) {
-      console.log("Seeding database...");
+      console.log("Seeding database with sample data...");
       const hashedPassword = await hashPassword("admin123");
       await storage.createUser({
         username: "admin",
@@ -219,48 +250,221 @@ export async function registerRoutes(
         email: "admin@college.edu",
       });
       
+      // Create Employers
       const empPass = await hashPassword("emp123");
-      const employer = await storage.createUser({
+      const employers = [];
+      
+      const employer1 = await storage.createUser({
         username: "techcorp",
         password: empPass,
         role: "employer",
         name: "Tech Corp HR",
         email: "hr@techcorp.com",
       });
+      employers.push(employer1);
       await storage.createEmployer({
-        userId: employer.id,
+        userId: employer1.id,
         companyName: "Tech Corp",
         industry: "Software",
         website: "https://techcorp.com",
-        isApproved: true
       });
 
+      const employer2 = await storage.createUser({
+        username: "innovateinc",
+        password: empPass,
+        role: "employer",
+        name: "Innovate Inc HR",
+        email: "hr@innovate.com",
+      });
+      employers.push(employer2);
+      await storage.createEmployer({
+        userId: employer2.id,
+        companyName: "Innovate Inc",
+        industry: "AI/ML",
+        website: "https://innovate.com",
+      });
+
+      const employer3 = await storage.createUser({
+        username: "globalenterprises",
+        password: empPass,
+        role: "employer",
+        name: "Global Enterprises HR",
+        email: "hr@globalenterprises.com",
+      });
+      employers.push(employer3);
+      await storage.createEmployer({
+        userId: employer3.id,
+        companyName: "Global Enterprises",
+        industry: "Consulting",
+        website: "https://globalenterprises.com",
+      });
+
+      // Create Students
       const studentPass = await hashPassword("student123");
-      const student = await storage.createUser({
+      const students = [];
+
+      const student1 = await storage.createUser({
         username: "alice",
         password: studentPass,
         role: "student",
         name: "Alice Smith",
         email: "alice@student.edu",
       });
+      students.push(student1);
       await storage.createStudent({
-        userId: student.id,
+        userId: student1.id,
         department: "Computer Science",
         cgpa: "3.8",
         graduationYear: 2024,
-        resumeUrl: "https://example.com/resume.pdf"
+        resumeUrl: "https://example.com/resume_alice.pdf"
       });
 
-      const job = await storage.createJob({
-        employerId: employer.id,
-        title: "Junior React Developer",
-        description: "We are looking for a junior developer with React skills.",
-        requirements: "React, Node.js, TypeScript",
-        location: "Remote",
-        salary: "$60,000"
+      const student2 = await storage.createUser({
+        username: "bob",
+        password: studentPass,
+        role: "student",
+        name: "Bob Johnson",
+        email: "bob@student.edu",
       });
-      
-      console.log("Database seeded!");
+      students.push(student2);
+      await storage.createStudent({
+        userId: student2.id,
+        department: "Information Technology",
+        cgpa: "3.6",
+        graduationYear: 2024,
+        resumeUrl: "https://example.com/resume_bob.pdf"
+      });
+
+      const student3 = await storage.createUser({
+        username: "carol",
+        password: studentPass,
+        role: "student",
+        name: "Carol Davis",
+        email: "carol@student.edu",
+      });
+      students.push(student3);
+      await storage.createStudent({
+        userId: student3.id,
+        department: "Computer Science",
+        cgpa: "3.9",
+        graduationYear: 2025,
+        resumeUrl: "https://example.com/resume_carol.pdf"
+      });
+
+      const student4 = await storage.createUser({
+        username: "david",
+        password: studentPass,
+        role: "student",
+        name: "David Brown",
+        email: "david@student.edu",
+      });
+      students.push(student4);
+      await storage.createStudent({
+        userId: student4.id,
+        department: "Electronics Engineering",
+        cgpa: "3.5",
+        graduationYear: 2024,
+        resumeUrl: "https://example.com/resume_david.pdf"
+      });
+
+      const student5 = await storage.createUser({
+        username: "emma",
+        password: studentPass,
+        role: "student",
+        name: "Emma Wilson",
+        email: "emma@student.edu",
+      });
+      students.push(student5);
+      await storage.createStudent({
+        userId: student5.id,
+        department: "Data Science",
+        cgpa: "3.7",
+        graduationYear: 2024,
+        resumeUrl: "https://example.com/resume_emma.pdf"
+      });
+
+      // Create Jobs
+      const job1 = await storage.createJob({
+        employerId: employers[0].id,
+        title: "Junior React Developer",
+        description: "We are looking for a junior developer with React skills to join our fast-growing team. You'll work on innovative products and cutting-edge technologies.",
+        requirements: "React, Node.js, TypeScript, CSS/HTML",
+        location: "Remote",
+        salary: "$60,000 - $70,000"
+      });
+
+      const job2 = await storage.createJob({
+        employerId: employers[0].id,
+        title: "Senior Backend Engineer",
+        description: "Looking for an experienced backend engineer to lead our infrastructure team.",
+        requirements: "Node.js, PostgreSQL, System Design, Docker",
+        location: "San Francisco, CA",
+        salary: "$120,000 - $150,000"
+      });
+
+      const job3 = await storage.createJob({
+        employerId: employers[1].id,
+        title: "ML Engineer",
+        description: "Join our AI/ML team to develop cutting-edge machine learning solutions.",
+        requirements: "Python, TensorFlow, PyTorch, AWS",
+        location: "Remote",
+        salary: "$100,000 - $130,000"
+      });
+
+      const job4 = await storage.createJob({
+        employerId: employers[1].id,
+        title: "Data Scientist",
+        description: "Work with large-scale datasets and build predictive models.",
+        requirements: "Python, SQL, Pandas, Statistics",
+        location: "New York, NY",
+        salary: "$90,000 - $120,000"
+      });
+
+      const job5 = await storage.createJob({
+        employerId: employers[2].id,
+        title: "Management Consultant",
+        description: "Help our clients solve complex business problems and drive transformations.",
+        requirements: "Problem-solving, Communication, Analytics",
+        location: "Various",
+        salary: "$80,000 - $100,000"
+      });
+
+      const job6 = await storage.createJob({
+        employerId: employers[2].id,
+        title: "Full Stack Developer",
+        description: "Build end-to-end solutions for our enterprise clients.",
+        requirements: "React, Node.js, MongoDB, AWS",
+        location: "Chicago, IL",
+        salary: "$85,000 - $110,000"
+      });
+
+      // Create Sample Applications
+      await storage.createApplication({
+        jobId: job1.id,
+        studentId: students[0].id,
+      });
+
+      await storage.createApplication({
+        jobId: job1.id,
+        studentId: students[1].id,
+      });
+
+      await storage.createApplication({
+        jobId: job3.id,
+        studentId: students[4].id,
+      });
+
+      await storage.createApplication({
+        jobId: job4.id,
+        studentId: students[4].id,
+      });
+
+      await storage.createApplication({
+        jobId: job2.id,
+        studentId: students[2].id,
+      });
+
+      console.log("✓ Database seeded successfully with sample data!");
     }
   };
 

@@ -28,7 +28,7 @@ export interface IStorage {
   getApplicationsByStudent(studentId: number): Promise<(Application & { job: Job, student: User })[]>;
   getApplicationsByJob(jobId: number): Promise<(Application & { job: Job, student: User })[]>;
   updateApplicationStatus(id: number, status: string): Promise<Application | undefined>;
-  getAllApplications(): Promise<Application[]>; // For officer/admin
+  getAllApplications(): Promise<Application[]>;
 
   // Stats
   getStats(): Promise<{ totalStudents: number; totalEmployers: number; totalJobs: number; placements: number }>;
@@ -97,9 +97,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getJobs(): Promise<(Job & { employer: User })[]> {
-    // Join with users to get employer name/details
-    // Note: Drizzle's query builder for joins can be complex, doing a manual join or multiple queries
-    // For simplicity/speed in this template, we'll fetch jobs and map manually or use a join
     const results = await db.select({
       job: jobs,
       employer: users

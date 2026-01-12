@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { insertUserSchema, insertStudentSchema, insertEmployerSchema, insertJobSchema, insertApplicationSchema, users, students, employers, jobs, applications } from "./schema";
+import { insertUserSchema, insertStudentSchema, insertEmployerSchema, insertJobSchema, insertApplicationSchema, users, students, employers, jobs, applications, type User, type Student, type Employer, type Job, type Application, type InsertUser, type InsertStudent, type InsertEmployer, type InsertJob, type InsertApplication, applicationStatuses, type ApplicationStatus, userRoles, type UserRole } from "./schema";
+
+// Re-export types
+export type { User, Student, Employer, Job, Application, InsertUser, InsertStudent, InsertEmployer, InsertJob, InsertApplication, ApplicationStatus, UserRole };
+export { applicationStatuses, userRoles };
 
 export const errorSchemas = {
   validation: z.object({
@@ -152,3 +156,4 @@ export function buildUrl(path: string, params?: Record<string, string | number>)
   }
   return url;
 }
+export const buildUrlHelper = buildUrl;
