@@ -1,0 +1,192 @@
+You are a senior full-stack engineer and UI/UX designer.
+
+Build a COMPLETE, PORTABLE Full Stack Web Application titled:
+
+“Placement Interaction System to Track Placement Records”
+(FSAD-PS14)
+
+========================
+CRITICAL REQUIREMENTS
+========================
+1. The project MUST run IDENTICALLY:
+   - on Replit
+   - after extracting the source code locally
+2. NO Replit-specific databases or services.
+3. The project MUST run with a single command:
+   docker-compose up
+4. No manual DB creation, no environment-specific hacks.
+5. Clean, academic-friendly, viva-safe code.
+
+========================
+TECH STACK (STRICT)
+========================
+Frontend:
+- React (Vite)
+- Tailwind CSS
+- shadcn/ui
+- Lucide Icons
+- Framer Motion (subtle animations only)
+
+Backend:
+- Node.js
+- Express.js
+- Prisma ORM
+
+Database:
+- PostgreSQL (Docker container, NOT Replit built-in)
+
+Infrastructure:
+- Docker
+- Docker Compose
+- .env configuration
+
+Authentication:
+- JWT (JSON Web Tokens)
+- Password hashing (bcrypt)
+
+========================
+UI / UX REQUIREMENTS
+========================
+The UI must be MODERN, CUTE, and BEAUTIFUL — not boring.
+
+Design Style:
+- Soft pastel theme
+- Rounded corners (2xl)
+- Gradient headers/navbars
+- Clean cards instead of ugly tables
+- Subtle hover animations
+- Friendly but professional look
+
+Color Palette:
+- Primary: Indigo (#6366F1)
+- Accent: Pink (#EC4899)
+- Background: Light grey (#F9FAFB)
+- Cards: White
+- Success: Green
+- Warning: Yellow
+- Danger: Red
+
+UI Components:
+- shadcn/ui for buttons, cards, dialogs, tables
+- Lucide icons everywhere (clean, consistent)
+- Framer Motion for fade/slide/hover animations
+- Loading skeletons
+- Empty-state messages
+
+The app should look like a REAL startup product, not a basic college CRUD app.
+
+========================
+USER ROLES (RBAC)
+========================
+- Admin
+- Student
+- Employer
+- Placement Officer
+
+Implement proper role-based access control.
+
+========================
+FEATURES BY ROLE
+========================
+
+ADMIN:
+- Login
+- Manage all users
+- Approve / block employers
+- View placement statistics dashboard
+
+STUDENT:
+- Register & login
+- Create and update profile
+- Upload resume
+- Browse job postings
+- Apply for jobs
+- Track application status:
+  Applied / Shortlisted / Selected / Rejected
+
+EMPLOYER:
+- Register & login
+- Post job openings
+- View applicants
+- Update application status
+
+PLACEMENT OFFICER:
+- View all placement records
+- Monitor placement progress
+- Generate simple reports
+
+========================
+DATABASE REQUIREMENTS
+========================
+Use PostgreSQL with Prisma.
+
+Design proper relational schema with:
+- Users
+- Students
+- Employers
+- Jobs
+- Applications
+
+Use:
+- Primary keys
+- Foreign keys
+- Constraints
+- Relationships
+
+Database must auto-initialize on first run.
+Run Prisma migrations automatically.
+
+========================
+PROJECT STRUCTURE
+========================
+placement-system/
+├── backend/
+│   ├── prisma/
+│   │   ├── schema.prisma
+│   │   └── seed.js
+│   ├── routes/
+│   ├── controllers/
+│   ├── middleware/
+│   ├── Dockerfile
+│   └── server.js
+├── frontend/
+│   ├── src/
+│   ├── components/
+│   ├── pages/
+│   ├── Dockerfile
+│   └── index.html
+├── docker-compose.yml
+├── .env.example
+└── README.md
+
+========================
+DOCKER REQUIREMENTS
+========================
+- Backend, frontend, and database must be containerized
+- docker-compose.yml must orchestrate everything
+- Environment variables via .env
+- No hardcoded credentials
+- One command should start everything
+
+========================
+ADDITIONAL REQUIREMENTS
+========================
+- Seed dummy data
+- Clean code with comments
+- Proper error handling
+- Responsive design
+- Clear README with setup instructions
+- Academic-friendly explanations for viva
+
+========================
+IMPORTANT NOTES
+========================
+This is a university Software Development Project (FSAD).
+Avoid unnecessary over-engineering.
+Focus on clarity, correctness, portability, and good UI.
+
+The project MUST be:
+- Easy to explain
+- Easy to run
+- Easy to demo
+- Visually impressive
