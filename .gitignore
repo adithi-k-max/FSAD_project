@@ -1,6 +1,34 @@
-node_modules
-dist
+# Node
+node_modules/
+dist/
+
+# OS
 .DS_Store
-server/public
+Thumbs.db
+
+# Frontend / Vite
 vite.config.ts.*
 *.tar.gz
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Prisma
+.prisma/
+prisma/dev.db
+
+# Docker / Database volumes
+docker-data/
+postgres-data/
+
+# Logs
+*.log
+
+# IDEs
+.vscode/
+.idea/
+
+# Optional (safe)
+coverage/
