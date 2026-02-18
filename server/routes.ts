@@ -7,7 +7,8 @@ import session from "express-session";
 import MemoryStore from "memorystore";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
-
+import { updateApplicationStatusSchema, applicationStatuses } from "@shared/schema";
+import { SESSION_CONFIG, HTTP_STATUS, ERROR_MESSAGES, USER_ROLES, EDIT_APPLICATION_ROLES } from "./constants";
 declare module "express-session" {
   interface SessionData {
     userId?: number;
@@ -33,24 +34,44 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  // Use environment variable for session secret, with fallback only for development
+  const sessionSecret = process.env.SESSION_SECRET || 
+    (process.env.NODE_ENV === "production" 
+      ? (() => { throw new Error("SESSION_SECRET must be set in production"); })()
+      : "dev-secret-change-in-production");
+
   const SessionStore = MemoryStore(session);
   app.use(
     session({
-      secret: "placement-system-secret",
+      secret: sessionSecret,
       resave: false,
       saveUninitialized: false,
-      cookie: { maxAge: 86400000 },
-      store: new SessionStore({ checkPeriod: 86400000 }),
+      cookie: { maxAge: SESSION_CONFIG.MAX_AGE, secure: process.env.NODE_ENV === "production" },
+      store: new SessionStore({ checkPeriod: SESSION_CONFIG.CHECK_PERIOD }),
     })
   );
 
   // Authentication Middleware
   const requireAuth = (req: any, res: any, next: any) => {
     if (!req.session.userId) {
-      return res.status(401).json({ message: "Unauthorized" });
+      return res.status(401).json({ message: "Not authenticated" });
     }
     next();
   };
+
+  // Authorization middleware: Check user role
+  const requireRole = (...allowedRoles: string[]) => 
+    async (req: any, res: any, next: any) => {
+      if (!req.session.userId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      const user = await storage.getUser(req.session.userId);
+      if (!user || !allowedRoles.includes(user.role)) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+      req.user = user;
+      next();
+    };
 
   // Auth Routes
   app.post(api.auth.register.path, async (req, res) => {
@@ -155,28 +176,29 @@ export async function registerRoutes(
   app.get(api.applications.list.path, requireAuth, async (req, res) => {
     const userId = req.session.userId;
     if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
+      return res.status(401).json({ message: "Not authenticated" });
     }
     
     const user = await storage.getUser(userId);
-    if (!user) return res.status(401).json({ message: "Unauthorized" });
+    if (!user) return res.status(401).json({ message: "User not found" });
 
-    if (user.role === "student") {
-      const apps = await storage.getApplicationsByStudent(user.id);
-      return res.json(apps);
-    } else if (user.role === "employer") {
-      const jobs = await storage.getJobsByEmployer(user.id);
-      let allApps: any[] = [];
-      for (const job of jobs) {
-        const apps = await storage.getApplicationsByJob(job.id);
-        allApps = [...allApps, ...apps];
+    try {
+      if (user.role === "student") {
+        const apps = await storage.getApplicationsByStudent(user.id);
+        return res.json(apps);
+      } else if (user.role === "employer") {
+        // Efficient single query instead of N+1
+        const apps = await storage.getApplicationsByEmployer(user.id);
+        return res.json(apps);
+      } else if (user.role === "admin" || user.role === "officer") {
+        const apps = await storage.getAllApplications();
+        return res.json(apps);
       }
-      return res.json(allApps);
-    } else if (user.role === "admin" || user.role === "officer") {
-      const apps = await storage.getAllApplications();
-      return res.json(apps);
+      res.json([]);
+    } catch (err) {
+      console.error("Error fetching applications:", err);
+      res.status(500).json({ message: "Failed to fetch applications" });
     }
-    res.json([]);
   });
 
   app.post(api.applications.create.path, requireAuth, async (req, res) => {
@@ -208,17 +230,38 @@ export async function registerRoutes(
   app.patch(api.applications.updateStatus.path, requireAuth, async (req, res) => {
     const userId = req.session.userId;
     if (!userId) {
-      return res.status(403).json({ message: "Unauthorized" });
+      return res.status(401).json({ message: "Not authenticated" });
     }
     
     const user = await storage.getUser(userId);
-    if (!["employer", "admin", "officer"].includes(user?.role || "")) {
-      return res.status(403).json({ message: "Unauthorized" });
+    if (!user || !["employer", "admin", "officer"].includes(user.role)) {
+      return res.status(403).json({ message: "Only employers and admins can update applications" });
     }
 
-    const input = api.applications.updateStatus.input.parse(req.body);
-    const updated = await storage.updateApplicationStatus(Number(req.params.id), input.status);
-    res.json(updated);
+    try {
+      const input = updateApplicationStatusSchema.parse(req.body);
+      
+      // Authorization: Verify employer owns the job this application is for
+      if (user.role === "employer") {
+        const appId = Number(req.params.id);
+        const application = await storage.getApplicationById(appId);
+        if (!application) {
+          return res.status(404).json({ message: "Application not found" });
+        }
+        const job = await storage.getJob(application.jobId);
+        if (!job || job.employerId !== user.id) {
+          return res.status(403).json({ message: "Cannot update applications for this job" });
+        }
+      }
+      
+      const updated = await storage.updateApplicationStatus(Number(req.params.id), input.status);
+      res.json(updated);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid status value", errors: err.errors });
+      }
+      res.status(500).json({ message: "Failed to update application" });
+    }
   });
 
   // Stats
@@ -236,22 +279,36 @@ export async function registerRoutes(
     res.json(stats);
   });
 
-  // Auto-seed function
+  // Auto-seed function with secure random passwords
   const seedDatabase = async () => {
     const admin = await storage.getUserByUsername("admin");
     if (!admin) {
       console.log("Seeding database with sample data...");
-      const hashedPassword = await hashPassword("admin123");
+      
+      // Generate secure random passwords for demo (should be changed immediately)
+      const adminPassword = randomBytes(16).toString('hex');
+      const employerPassword = randomBytes(16).toString('hex');
+      const studentPassword = randomBytes(16).toString('hex');
+      
+      // Log passwords only in development - in production use env vars or secure auth
+      if (process.env.NODE_ENV !== "production") {
+        console.log("DEMO CREDENTIALS (for development only):");
+        console.log(`Admin - username: admin - password: ${adminPassword}`);
+        console.log(`Employers - password: ${employerPassword}`);
+        console.log(`Students - password: ${studentPassword}`);
+      }
+      
+      const hashedAdminPassword = await hashPassword(adminPassword);
       await storage.createUser({
         username: "admin",
-        password: hashedPassword,
+        password: hashedAdminPassword,
         role: "admin",
         name: "System Admin",
         email: "admin@college.edu",
       });
       
       // Create Employers
-      const empPass = await hashPassword("emp123");
+      const empPass = await hashPassword(employerPassword);
       const employers = [];
       
       const employer1 = await storage.createUser({
@@ -300,7 +357,7 @@ export async function registerRoutes(
       });
 
       // Create Students
-      const studentPass = await hashPassword("student123");
+      const studentPass = await hashPassword(studentPassword);
       const students = [];
 
       const student1 = await storage.createUser({

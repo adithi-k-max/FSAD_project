@@ -9,6 +9,13 @@ export type UserRole = (typeof userRoles)[number];
 export const applicationStatuses = ["applied", "shortlisted", "selected", "rejected"] as const;
 export type ApplicationStatus = (typeof applicationStatuses)[number];
 
+// Password validation schema
+export const passwordSchema = z
+  .string()
+  .min(8, "Password must be at least 8 characters")
+  .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+  .regex(/[0-9]/, "Password must contain at least one number");
+
 // Users table (All roles)
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -16,7 +23,7 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   role: text("role", { enum: userRoles }).notNull(),
   name: text("name").notNull(),
-  email: text("email").notNull(),
+  email: text("email").notNull().unique(),  // Now unique and validated
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -95,11 +102,21 @@ export const applicationsRelations = relations(applications, ({ one }) => ({
 }));
 
 // Schemas
-export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
+export const insertUserSchema = createInsertSchema(users)
+  .omit({ id: true, createdAt: true })
+  .extend({
+    password: passwordSchema,
+    email: z.string().email("Invalid email address"),
+  });
 export const insertStudentSchema = createInsertSchema(students).omit({ id: true });
 export const insertEmployerSchema = createInsertSchema(employers).omit({ id: true, isApproved: true });
 export const insertJobSchema = createInsertSchema(jobs).omit({ id: true, postedAt: true });
-export const insertApplicationSchema = createInsertSchema(applications).omit({ id: true, appliedAt: true, status: true });
+export const insertApplicationSchema = createInsertSchema(applications)
+  .omit({ id: true, appliedAt: true, status: true });
+
+export const updateApplicationStatusSchema = z.object({
+  status: z.enum(applicationStatuses),
+});
 
 // Types
 export type User = typeof users.$inferSelect;

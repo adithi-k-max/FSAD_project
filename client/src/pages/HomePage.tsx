@@ -1,21 +1,22 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CheckCircle, Users, Briefcase } from "lucide-react";
-import { motion } from "framer-motion";
+import { TrendingUp, Lock, Clock } from "lucide-react";
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-pink-50">
-      {/* Navbar */}
-      <nav className="p-6">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="text-2xl font-display font-bold gradient-text">CampusPlace</div>
-          <div className="space-x-4">
+    <div className="min-h-screen bg-white">
+      {/* Navigation */}
+      <nav className="border-b border-slate-200">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+          <div className="text-xl font-bold text-slate-900">CampusPlace</div>
+          <div className="space-x-3">
             <Link href="/auth">
-              <Button variant="ghost" className="text-slate-600 hover:text-indigo-600">Login</Button>
+              <Button variant="ghost" className="text-slate-600 hover:text-slate-900">
+                Sign In
+              </Button>
             </Link>
             <Link href="/auth">
-              <Button className="bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200">
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white">
                 Get Started
               </Button>
             </Link>
@@ -23,83 +24,114 @@ export default function HomePage() {
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <main className="max-w-7xl mx-auto px-6 py-20 lg:py-32">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <div className="inline-block px-4 py-2 bg-indigo-100 text-indigo-700 rounded-full text-sm font-semibold mb-6">
-              #1 Campus Placement Platform
-            </div>
-            <h1 className="text-5xl lg:text-7xl font-display font-bold text-slate-900 leading-tight mb-6">
-              Launch your <span className="gradient-text">career</span> straight from campus.
-            </h1>
-            <p className="text-xl text-slate-600 mb-8 leading-relaxed">
-              Connect with top employers, manage applications, and land your dream job. 
-              The all-in-one placement management system for modern universities.
-            </p>
-            <div className="flex gap-4">
-              <Link href="/auth">
-                <Button size="lg" className="bg-indigo-600 hover:bg-indigo-700 h-14 px-8 rounded-xl text-lg shadow-xl shadow-indigo-200">
-                  I'm a Student
-                </Button>
-              </Link>
-              <Link href="/auth">
-                <Button size="lg" variant="outline" className="h-14 px-8 rounded-xl text-lg border-indigo-200 text-indigo-700 hover:bg-indigo-50">
-                  I'm an Employer
-                </Button>
-              </Link>
-            </div>
-          </motion.div>
+      {/* Hero Section - Refined, Professional */}
+      <section className="max-w-6xl mx-auto px-6 py-20">
+        <div className="max-w-2xl">
+          <h1 className="text-page-title text-slate-900 mb-6">
+            Match talent with purpose
+          </h1>
+          <p className="text-lg text-slate-700 mb-8 leading-relaxed">
+            CampusPlace powers structured placements. Students reach employers. Employers find talent. 
+            Built for universities that mean business.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-4 mb-16">
+            <Link href="/auth?role=student">
+              <Button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-2">
+                I'm a Student
+              </Button>
+            </Link>
+            <Link href="/auth?role=employer">
+              <Button variant="outline" className="w-full sm:w-auto border-slate-300">
+                I'm an Employer
+              </Button>
+            </Link>
+          </div>
 
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="relative"
-          >
-            <div className="absolute -top-10 -right-10 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
-            <div className="absolute -bottom-10 -left-10 w-72 h-72 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
-            
-            <div className="relative bg-white/60 backdrop-blur-xl border border-white/40 p-8 rounded-3xl shadow-2xl">
-              <div className="space-y-6">
-                <div className="flex items-center gap-4 p-4 bg-white rounded-2xl shadow-sm">
-                  <div className="bg-green-100 p-3 rounded-xl">
-                    <CheckCircle className="w-6 h-6 text-green-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-800">Application Accepted</h3>
-                    <p className="text-sm text-slate-500">Your interview is scheduled for tomorrow</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-4 p-4 bg-white rounded-2xl shadow-sm">
-                  <div className="bg-blue-100 p-3 rounded-xl">
-                    <Briefcase className="w-6 h-6 text-blue-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-800">New Job Posted</h3>
-                    <p className="text-sm text-slate-500">Senior React Developer at TechCorp</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-4 p-4 bg-white rounded-2xl shadow-sm">
-                  <div className="bg-pink-100 p-3 rounded-xl">
-                    <Users className="w-6 h-6 text-pink-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-800">500+ Students Placed</h3>
-                    <p className="text-sm text-slate-500">Join our success stories today</p>
-                  </div>
-                </div>
-              </div>
+          {/* Key Metrics - Subtle, Intentional */}
+          <div className="grid grid-cols-3 gap-8 border-t border-slate-200 pt-8">
+            <div>
+              <div className="text-2xl font-bold text-slate-900 mb-1">1200+</div>
+              <div className="text-sm text-slate-600">Active Students</div>
             </div>
-          </motion.div>
+            <div>
+              <div className="text-2xl font-bold text-slate-900 mb-1">85%</div>
+              <div className="text-sm text-slate-600">Placement Rate</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-slate-900 mb-1">50+</div>
+              <div className="text-sm text-slate-600">Recruiting Partners</div>
+            </div>
+          </div>
         </div>
-      </main>
+      </section>
+
+      {/* Why CampusPlace - Three Distinct Features */}
+      <section className="bg-slate-50 border-t border-b border-slate-200">
+        <div className="max-w-6xl mx-auto px-6 py-20">
+          <h2 className="text-section-title text-slate-900 mb-12">
+            Built for placement that works
+          </h2>
+          
+          <div className="grid md:grid-cols-3 gap-12">
+            {/* Feature 1 */}
+            <div>
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                <TrendingUp className="w-6 h-6 text-blue-600" />
+              </div>
+              <h3 className="text-card-title text-slate-900 mb-3">
+                Full Visibility
+              </h3>
+              <p className="text-slate-700 leading-relaxed">
+                Every step tracked in real-time. No surprises. No bottlenecks. Pure transparency.
+              </p>
+            </div>
+
+            {/* Feature 2 */}
+            <div>
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+                <Lock className="w-6 h-6 text-green-600" />
+              </div>
+              <h3 className="text-card-title text-slate-900 mb-3">
+                Enterprise Security
+              </h3>
+              <p className="text-slate-700 leading-relaxed">
+                GDPR-compliant. ISO-grade infrastructure. Your institutional data is protected.
+              </p>
+            </div>
+
+            {/* Feature 3 */}
+            <div>
+              <div className="w-12 h-12 bg-slate-200 rounded-lg flex items-center justify-center mb-4">
+                <Clock className="w-6 h-6 text-slate-700" />
+              </div>
+              <h3 className="text-card-title text-slate-900 mb-3">
+                Your Systems First
+              </h3>
+              <p className="text-slate-700 leading-relaxed">
+                Integrates with your existing infrastructure. Controls and compliance baked in.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Footer */}
+      <section className="bg-white border-t border-slate-200">
+        <div className="max-w-6xl mx-auto px-6 py-20 text-center">
+          <h2 className="text-section-title text-slate-900 mb-6">
+            Ready to scale placements?
+          </h2>
+          <p className="text-lg text-slate-700 mb-8 max-w-lg mx-auto">
+            Leading universities and employers rely on CampusPlace to execute placements at scale.
+          </p>
+          <Link href="/auth">
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2">
+              Get Started
+            </Button>
+          </Link>
+        </div>
+      </section>
     </div>
   );
 }

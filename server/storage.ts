@@ -1,6 +1,6 @@
-import { users, students, employers, jobs, applications, type User, type Student, type Employer, type Job, type Application, type InsertUser, type InsertStudent, type InsertEmployer, type InsertJob, type InsertApplication } from "@shared/schema";
+import { users, students, employers, jobs, applications, type User, type Student, type Employer, type Job, type Application, type InsertUser, type InsertStudent, type InsertEmployer, type InsertJob, type InsertApplication, applicationStatuses, type ApplicationStatus } from "@shared/schema";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, count } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -25,9 +25,11 @@ export interface IStorage {
   
   // Applications
   createApplication(app: InsertApplication): Promise<Application>;
+  getApplicationById(id: number): Promise<Application | undefined>;
   getApplicationsByStudent(studentId: number): Promise<(Application & { job: Job, student: User })[]>;
   getApplicationsByJob(jobId: number): Promise<(Application & { job: Job, student: User })[]>;
-  updateApplicationStatus(id: number, status: string): Promise<Application | undefined>;
+  getApplicationsByEmployer(employerId: number): Promise<(Application & { job: Job, student: User })[]>;
+  updateApplicationStatus(id: number, status: ApplicationStatus): Promise<Application | undefined>;
   getAllApplications(): Promise<Application[]>;
 
   // Stats
@@ -116,6 +118,11 @@ export class DatabaseStorage implements IStorage {
     return application;
   }
 
+  async getApplicationById(id: number): Promise<Application | undefined> {
+    const [app] = await db.select().from(applications).where(eq(applications.id, id));
+    return app;
+  }
+
   async getApplicationsByStudent(studentId: number): Promise<(Application & { job: Job, student: User })[]> {
     const results = await db.select({
       application: applications,
@@ -144,29 +151,46 @@ export class DatabaseStorage implements IStorage {
     return results.map(r => ({ ...r.application, job: r.job, student: r.student }));
   }
 
-  async getAllApplications(): Promise<Application[]> {
-    return await db.select().from(applications);
+  async getApplicationsByEmployer(employerId: number): Promise<(Application & { job: Job, student: User })[]> {
+    const results = await db.select({
+      application: applications,
+      job: jobs,
+      student: users
+    })
+    .from(applications)
+    .innerJoin(jobs, eq(applications.jobId, jobs.id))
+    .innerJoin(users, eq(applications.studentId, users.id))
+    .where(eq(jobs.employerId, employerId));
+
+    return results.map(r => ({ ...r.application, job: r.job, student: r.student }));
   }
 
-  async updateApplicationStatus(id: number, status: string): Promise<Application | undefined> {
+  async updateApplicationStatus(id: number, status: ApplicationStatus): Promise<Application | undefined> {
     const [app] = await db.update(applications)
-      .set({ status: status as any })
+      .set({ status })
       .where(eq(applications.id, id))
       .returning();
     return app;
   }
 
+  async getAllApplications(): Promise<Application[]> {
+    return await db.select().from(applications);
+  }
+
   async getStats(): Promise<{ totalStudents: number; totalEmployers: number; totalJobs: number; placements: number }> {
-    const studentsCount = await db.select().from(students);
-    const employersCount = await db.select().from(employers);
-    const jobsCount = await db.select().from(jobs);
-    const placementsCount = await db.select().from(applications).where(eq(applications.status, 'selected'));
+    // Use COUNT() aggregation instead of fetching all rows
+    const [studentCount] = await db.select({ count: count() }).from(students);
+    const [employerCount] = await db.select({ count: count() }).from(employers);
+    const [jobCount] = await db.select({ count: count() }).from(jobs);
+    const [placementCount] = await db.select({ count: count() })
+      .from(applications)
+      .where(eq(applications.status, "selected"));
 
     return {
-      totalStudents: studentsCount.length,
-      totalEmployers: employersCount.length,
-      totalJobs: jobsCount.length,
-      placements: placementsCount.length,
+      totalStudents: studentCount?.count || 0,
+      totalEmployers: employerCount?.count || 0,
+      totalJobs: jobCount?.count || 0,
+      placements: placementCount?.count || 0,
     };
   }
 }

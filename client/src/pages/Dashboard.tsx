@@ -2,159 +2,132 @@ import { useUser } from "@/hooks/use-auth";
 import { useStats } from "@/hooks/use-stats";
 import { useApplications } from "@/hooks/use-applications";
 import { useJobs } from "@/hooks/use-jobs";
-import { StatCard } from "@/components/ui/stat-card";
 import { 
   Users, 
   Briefcase, 
-  FileText, 
   CheckCircle,
-  Clock,
-  Building
+  Zap,
+  TrendingUp,
+  Clock
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 
-export default function Dashboard() {
+// Stat card component - cleaner design
+function StatCard({ 
+  label, 
+  value, 
+  icon: Icon, 
+  variant = 'neutral',
+  subtext 
+}: { 
+  label: string;
+  value: string | number;
+  icon: React.ReactNode;
+  variant?: 'primary' | 'success' | 'warning' | 'neutral';
+  subtext?: string;
+}) {
+  const variantStyles = {
+    primary: 'bg-blue-50 border-blue-200',
+    success: 'bg-green-50 border-green-200',
+    warning: 'bg-amber-50 border-amber-200',
+    neutral: 'bg-slate-50 border-slate-200',
+  };
+
+  return (
+    <div className={`border rounded-lg p-6 ${variantStyles[variant]}`}>
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-sm font-medium text-slate-700 mb-2">{label}</p>
+          <p className="text-3xl font-bold text-slate-900">{value}</p>
+          {subtext && <p className="text-xs text-slate-600 mt-2">{subtext}</p>}
+        </div>
+        <div className="opacity-60">{Icon}</div>
+      </div>
+    </div>
+  );
+}
+
+// Student Dashboard
+function StudentDashboard() {
   const { data: user } = useUser();
-  const { data: stats } = useStats();
   const { data: applications } = useApplications();
   const { data: jobs } = useJobs();
 
-  if (!user) return null;
+  const activeApplications = applications?.filter(a => a.status === 'applied').length || 0;
+  const shortlisted = applications?.filter(a => a.status === 'shortlisted').length || 0;
+  const offers = applications?.filter(a => a.status === 'selected').length || 0;
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* Header Section */}
-      <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white rounded-2xl p-8 shadow-lg">
-        <h1 className="text-4xl font-display font-bold mb-2">
-          Welcome, {user.name}! 👋
-        </h1>
-        <p className="text-indigo-100 text-lg">
-          {user.role === 'student' ? 'Explore opportunities and advance your career' :
-           user.role === 'employer' ? 'Find and manage talented candidates' :
-           'Monitor placements and system statistics'}
-        </p>
+    <div className="space-y-8">
+      {/* Welcome Section */}
+      <div>
+        <h1 className="text-page-title text-slate-900 mb-1">Your Pipeline</h1>
+        <p className="text-base text-slate-600">Track applications. Land offers.</p>
       </div>
 
-      {/* Stats Grid - Show different stats based on role */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {(user.role === 'admin' || user.role === 'officer') && stats && (
-          <>
-            <StatCard 
-              title="Total Students" 
-              value={stats.totalStudents} 
-              icon={Users}
-              colorClass="text-blue-600 bg-blue-100"
-            />
-            <StatCard 
-              title="Active Employers" 
-              value={stats.totalEmployers} 
-              icon={Building}
-              colorClass="text-purple-600 bg-purple-100"
-            />
-            <StatCard 
-              title="Jobs Posted" 
-              value={stats.totalJobs} 
-              icon={Briefcase}
-              colorClass="text-pink-600 bg-pink-100"
-            />
-            <StatCard 
-              title="Placements" 
-              value={stats.placements} 
-              icon={CheckCircle}
-              colorClass="text-green-600 bg-green-100"
-            />
-          </>
-        )}
-
-        {user.role === 'student' && applications && (
-          <>
-             <StatCard 
-              title="Jobs Available" 
-              value={jobs?.length || 0} 
-              icon={Briefcase}
-              colorClass="text-indigo-600 bg-indigo-100"
-            />
-            <StatCard 
-              title="Applied" 
-              value={applications.length} 
-              icon={FileText}
-              colorClass="text-blue-600 bg-blue-100"
-            />
-            <StatCard 
-              title="Shortlisted" 
-              value={applications.filter(a => a.status === 'shortlisted').length} 
-              icon={Clock}
-              colorClass="text-amber-600 bg-amber-100"
-            />
-            <StatCard 
-              title="Offers" 
-              value={applications.filter(a => a.status === 'selected').length} 
-              icon={CheckCircle}
-              colorClass="text-green-600 bg-green-100"
-            />
-          </>
-        )}
-
-        {user.role === 'employer' && jobs && (
-          <>
-            <StatCard 
-              title="Active Jobs" 
-              value={jobs.filter(j => j.employerId === user.id).length} 
-              icon={Briefcase}
-              colorClass="text-indigo-600 bg-indigo-100"
-            />
-             <StatCard 
-              title="Total Applications" 
-              value={applications?.length || 0} 
-              icon={Users}
-              colorClass="text-pink-600 bg-pink-100"
-            />
-          </>
-        )}
+      {/* Primary Stats - Focused on what matters */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <StatCard 
+          label="Applications Active" 
+          value={activeApplications}
+          icon={<Briefcase className="w-6 h-6" />}
+          variant="primary"
+          subtext="In progress"
+        />
+        <StatCard 
+          label="Shortlisted" 
+          value={shortlisted}
+          icon={<Zap className="w-6 h-6" />}
+          variant="warning"
+          subtext="Next: Interviews"
+        />
+        <StatCard 
+          label="Offers Received" 
+          value={offers}
+          icon={<CheckCircle className="w-6 h-6" />}
+          variant="success"
+          subtext="Your wins"
+        />
       </div>
 
-      {/* Recent Activity Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        
-        {/* Applications List */}
-        <Card className="border-none shadow-sm">
-          <CardHeader>
-            <CardTitle className="font-display">Recent Applications</CardTitle>
+      {/* Two Column Layout */}
+      <div className="grid lg:grid-cols-2 gap-8">
+        {/* Active Applications */}
+        <Card className="card-base">
+          <CardHeader className="pb-4 border-b border-slate-200">
+            <CardTitle className="text-card-title">Your Applications</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             {!applications || applications.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <FileText className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                <p>No applications found</p>
+              <div className="text-center py-12">
+                <Briefcase className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+                <p className="text-slate-600 font-medium">Ready to apply?</p>
+                <p className="text-sm text-slate-500 mt-1">Browse opportunities and start your applications</p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {applications.slice(0, 5).map((app) => (
-                  <div key={app.id} className="flex items-center justify-between p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors">
-                    <div>
-                      <h4 className="font-semibold text-slate-800">{app.job.title}</h4>
-                      <p className="text-sm text-slate-500">
-                        {user.role === 'student' 
-                          ? `at ${app.job.employerId}` // Ideally join employer name here
-                          : `Applied by ${app.student.name}`
-                        }
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs text-muted-foreground hidden sm:inline-block">
-                        {app.appliedAt && format(new Date(app.appliedAt), 'MMM d')}
-                      </span>
-                      <Badge variant="secondary" className={`
-                        capitalize 
-                        ${app.status === 'selected' ? 'bg-green-100 text-green-700' : ''}
-                        ${app.status === 'rejected' ? 'bg-red-100 text-red-700' : ''}
-                        ${app.status === 'shortlisted' ? 'bg-amber-100 text-amber-700' : ''}
-                      `}>
+                  <div key={app.id} className="p-4 border border-slate-200 rounded-lg hover:border-slate-300 transition-colors">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-slate-900">{app.job.title}</h4>
+                        <p className="text-sm text-slate-600">{app.job.location}</p>
+                      </div>
+                      <Badge 
+                        className={`
+                          text-xs
+                          ${app.status === 'selected' ? 'bg-green-100 text-green-700' : ''}
+                          ${app.status === 'rejected' ? 'bg-red-100 text-red-700' : ''}
+                          ${app.status === 'shortlisted' ? 'bg-amber-100 text-amber-700' : ''}
+                          ${app.status === 'applied' ? 'bg-blue-100 text-blue-700' : ''}
+                        `}
+                      >
                         {app.status}
                       </Badge>
                     </div>
+                    <p className="text-xs text-slate-500">{app.appliedAt && format(new Date(app.appliedAt), 'MMM d, yyyy')}</p>
                   </div>
                 ))}
               </div>
@@ -162,39 +135,220 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Recent Jobs or Stats Chart area */}
-        <Card className="border-none shadow-sm">
-           <CardHeader>
-            <CardTitle className="font-display">
-              {user.role === 'student' ? 'Recommended Jobs' : 'Recent Job Postings'}
-            </CardTitle>
+        {/* Next Steps / Resources */}
+        <Card className="card-base">
+          <CardHeader className="pb-4 border-b border-slate-200">
+            <CardTitle className="text-card-title">Your Next Steps</CardTitle>
           </CardHeader>
-          <CardContent>
-             {!jobs || jobs.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Briefcase className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                <p>No jobs available yet</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {jobs.slice(0, 5).map((job) => (
-                  <div key={job.id} className="p-4 rounded-xl border border-slate-100 hover:border-indigo-200 hover:shadow-sm transition-all bg-white">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-semibold text-indigo-900">{job.title}</h4>
-                        <p className="text-sm text-slate-500">{job.location} • {job.salary}</p>
-                      </div>
-                      <Badge variant="outline" className="border-indigo-100 text-indigo-600">
-                        Active
-                      </Badge>
-                    </div>
+          <CardContent className="pt-6">
+            <div className="space-y-4">
+              <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-semibold text-blue-700">1</span>
                   </div>
-                ))}
+                  <div>
+                    <p className="font-semibold text-slate-900 text-sm">Complete your profile</p>
+                    <p className="text-xs text-slate-600 mt-1">Skills and resume increase visibility</p>
+                  </div>
+                </div>
               </div>
-             )}
+              
+              <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-semibold text-blue-700">2</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-slate-900 text-sm">Explore {jobs?.length || 0} active roles</p>
+                    <p className="text-xs text-slate-600 mt-1">New positions added daily</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-semibold text-blue-700">3</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-slate-900 text-sm">Respond to interview requests</p>
+                    <p className="text-xs text-slate-600 mt-1">Time-sensitive opportunities</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
     </div>
   );
+}
+
+// Employer Dashboard
+function EmployerDashboard() {
+  const { data: user } = useUser();
+  const { data: applications } = useApplications();
+  const { data: jobs } = useJobs();
+
+  const activeJobs = jobs?.filter(j => j.employerId === user?.id).length || 0;
+  const totalApplications = applications?.length || 0;
+  const newApplications = applications?.slice(0, 2).length || 0;
+
+  return (
+    <div className="space-y-8">
+      {/* Welcome Section */}
+      <div>
+        <h1 className="text-page-title text-slate-900 mb-1">Your Candidates</h1>
+        <p className="text-base text-slate-600">Manage openings. Review applications.</p>
+      </div>
+
+      {/* KPI Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <StatCard 
+          label="Active Job Postings" 
+          value={activeJobs}
+          icon={<Briefcase className="w-6 h-6" />}
+          variant="primary"
+          subtext="Recruiting now"
+        />
+        <StatCard 
+          label="Total Applications" 
+          value={totalApplications}
+          icon={<Users className="w-6 h-6" />}
+          variant="neutral"
+          subtext="Across all positions"
+        />
+        <StatCard 
+          label="New This Week" 
+          value={newApplications}
+          icon={<TrendingUp className="w-6 h-6" />}
+          variant="success"
+          subtext="Ready to review"
+        />
+      </div>
+
+      {/* Pending Actions */}
+      <Card className="card-base">
+        <CardHeader className="pb-4 border-b border-slate-200">
+          <CardTitle className="text-card-title">Recent Applications</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-6">
+          {!applications || applications.length === 0 ? (
+            <div className="text-center py-12">
+              <Users className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+              <p className="text-slate-600 font-medium">Post your first job</p>
+              <p className="text-sm text-slate-500 mt-1">Create an opening to start receiving applications</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {applications.slice(0, 8).map((app) => (
+                <div key={app.id} className="p-4 border border-slate-200 rounded-lg hover:border-slate-300 transition-colors">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-slate-900">{app.student.name}</h4>
+                      <p className="text-sm text-slate-600">{app.job.title}</p>
+                    </div>
+                    <Badge variant="outline" className={`
+                      ${app.status === 'applied' ? 'bg-blue-50 text-blue-700 border-blue-200' : ''}
+                      ${app.status === 'shortlisted' ? 'bg-amber-50 text-amber-700 border-amber-200' : ''}
+                    `}>
+                      {app.status}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Admin Dashboard
+function AdminDashboard() {
+  const { data: stats } = useStats();
+  const { data: applications } = useApplications();
+
+  return (
+    <div className="space-y-8">
+      {/* Welcome Section */}
+      <div>
+        <h1 className="text-page-title text-slate-900 mb-1">Platform Status</h1>
+        <p className="text-base text-slate-600">System metrics and placements</p>
+      </div>
+
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard 
+          label="Total Students" 
+          value={stats?.totalStudents || 0}
+          icon={<Users className="w-6 h-6" />}
+          variant="primary"
+        />
+        <StatCard 
+          label="Active Employers" 
+          value={stats?.totalEmployers || 0}
+          icon={<Briefcase className="w-6 h-6" />}
+          variant="neutral"
+        />
+        <StatCard 
+          label="Open Positions" 
+          value={stats?.totalJobs || 0}
+          icon={<TrendingUp className="w-6 h-6" />}
+          variant="warning"
+        />
+        <StatCard 
+          label="Placements" 
+          value={stats?.placements || 0}
+          icon={<CheckCircle className="w-6 h-6" />}
+          variant="success"
+        />
+      </div>
+
+      {/* Activity Feed */}
+      <Card className="card-base">
+        <CardHeader className="pb-4 border-b border-slate-200">
+          <CardTitle className="text-card-title">Recent Activity</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-6">
+          {!applications || applications.length === 0 ? (
+            <p className="text-center py-12 text-slate-500">No activity</p>
+          ) : (
+            <div className="space-y-2">
+              {applications.slice(0, 10).map((app) => (
+                <div key={app.id} className="py-3 px-4 hover:bg-slate-50 rounded-lg transition-colors flex justify-between items-center">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-slate-900">{app.student.name}</p>
+                    <p className="text-xs text-slate-600">{app.job.title}</p>
+                  </div>
+                  <p className="text-xs text-slate-500 flex-shrink-0 ml-2">
+                    {app.appliedAt && format(new Date(app.appliedAt), 'MMM d')}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Main Dashboard Router
+export default function Dashboard() {
+  const { data: user } = useUser();
+
+  if (!user) return null;
+
+  if (user.role === 'student') {
+    return <StudentDashboard />;
+  } else if (user.role === 'employer') {
+    return <EmployerDashboard />;
+  } else if (user.role === 'admin' || user.role === 'officer') {
+    return <AdminDashboard />;
+  }
+
+  return null;
 }

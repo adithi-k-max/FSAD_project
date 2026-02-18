@@ -1,24 +1,23 @@
-@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  /* Soft Pastel Theme */
-  --font-display: 'Fredoka', sans-serif;
-  --font-body: 'Nunito', sans-serif;
+  /* Modern professional palette */
+  --font-body: 'Inter', sans-serif;
 
-  /* Indigo Primary */
-  --primary: 239 84% 67%;
+  /* Primary - Professional Blue */
+  --primary: 219 89% 52%;
   --primary-foreground: 0 0% 100%;
   
-  /* Pink Accent */
-  --accent: 330 81% 60%;
+  /* Accent - Success Green */
+  --accent: 142 76% 36%;
   --accent-foreground: 0 0% 100%;
 
-  /* Soft backgrounds */
-  --background: 240 33% 98%; /* Very light indigo tint */
+  /* Backgrounds */
+  --background: 0 0% 100%;
   --foreground: 224 71% 4%;
   
   --card: 0 0% 100%;
@@ -27,40 +26,106 @@
   --popover: 0 0% 100%;
   --popover-foreground: 224 71% 4%;
   
-  --secondary: 240 20% 95%; /* Soft gray/indigo */
-  --secondary-foreground: 240 5.9% 10%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 210 40% 20%;
   
-  --muted: 240 20% 95%;
-  --muted-foreground: 240 3.8% 46.1%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 16% 47%;
   
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 0 0% 98%;
 
-  --border: 240 5.9% 90%;
-  --input: 240 5.9% 90%;
-  --ring: 239 84% 67%; /* Matches Primary */
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 219 89% 52%;
 
-  --radius: 1rem;
+  --radius: 0.75rem;
 }
 
 @layer base {
   * {
     @apply border-border;
   }
+  
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-body);
+    @apply text-base leading-relaxed;
   }
-  h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-display);
-    @apply font-semibold tracking-wide text-slate-800;
+  
+  /* Typography hierarchy */
+  h1 {
+    @apply text-4xl font-bold tracking-tight;
+    line-height: 1.2;
+  }
+  
+  h2 {
+    @apply text-2xl font-semibold tracking-tight;
+    line-height: 1.3;
+  }
+  
+  h3 {
+    @apply text-xl font-semibold;
+    line-height: 1.4;
+  }
+  
+  h4, h5, h6 {
+    @apply text-lg font-semibold;
+    line-height: 1.4;
+  }
+  
+  p {
+    @apply text-base leading-relaxed text-slate-700;
+  }
+  
+  .text-muted {
+    @apply text-sm text-slate-600;
+  }
+  
+  .text-caption {
+    @apply text-xs text-slate-500;
   }
 }
 
-.glass-card {
-  @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-xl;
-}
-
-.gradient-text {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-pink-500;
+@layer components {
+  /* Section spacing */
+  .section-spacing {
+    @apply space-y-8;
+  }
+  
+  /* Card styling - clean, minimal */
+  .card-base {
+    @apply bg-white border border-slate-200 rounded-lg shadow-sm;
+  }
+  
+  .card-hover {
+    @apply transition-all duration-250 hover:shadow-md hover:border-slate-300;
+  }
+  
+  /* Input/Form elements */
+  .input-base {
+    @apply px-3 py-2 bg-white border border-slate-300 rounded-md;
+    @apply text-base leading-normal;
+    @apply transition-colors duration-150;
+  }
+  
+  .input-base:focus {
+    @apply outline-none ring-2 ring-blue-500 border-transparent;
+  }
+  
+  /* Typography utilities */
+  .text-page-title {
+    @apply text-5xl font-bold tracking-tight;
+    line-height: 1.1;
+  }
+  
+  .text-section-title {
+    @apply text-3xl font-semibold tracking-tight;
+    line-height: 1.2;
+  }
+  
+  .text-card-title {
+    @apply text-xl font-semibold;
+    line-height: 1.4;
+  }
 }
