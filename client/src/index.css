@@ -99,7 +99,7 @@
   }
   
   .card-hover {
-    @apply transition-all duration-250 hover:shadow-md hover:border-slate-300;
+    @apply transition-all duration-200 hover:shadow-md hover:border-slate-300;
   }
   
   /* Input/Form elements */

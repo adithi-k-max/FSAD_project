@@ -238,7 +238,7 @@ export default function JobsPage() {
                   <Button variant="outline" className="w-full">
                     Review Candidates
                   </Button>
-                )}}
+                )}
               </CardContent>
             </Card>
           ))}
